@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>英文數字唸讀機</title>
+<meta name="theme-color" content="#0F2027">
+<meta name="description" content="按數字，唸出對應的英文說法。">
+<style>
+  :root{
+    --ink:#0F2027;
+    --ink-soft:#1B343E;
+    --bone:#EDE6D6;
+    --bone-dim:#CFC5B0;
+    --amber:#E29B2C;
+    --amber-deep:#B87816;
+    --glow:#8FD6B4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--ink);
+    background-image:radial-gradient(120% 70% at 50% 0%, #1B343E 0%, #0F2027 62%);
+    color:var(--bone);
+    font-family:"Helvetica Neue",Helvetica,Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
+    display:flex;justify-content:center;
+    padding:calc(20px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom));
+    overscroll-behavior:none;
+  }
+  .machine{width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px}
+  .screen{
+    background:#081418;
+    border:1px solid rgba(143,214,180,.18);
+    border-radius:10px;
+    padding:18px 18px 20px;
+    box-shadow:inset 0 2px 14px rgba(0,0,0,.7);
+    min-height:158px;
+    display:flex;flex-direction:column;justify-content:space-between;gap:14px;
+  }
+  .digits{
+    font-size:40px;line-height:1;letter-spacing:.02em;
+    font-variant-numeric:tabular-nums;
+    color:var(--glow);
+    text-align:right;
+    word-break:break-all;
+    text-shadow:0 0 16px rgba(143,214,180,.25);
+  }
+  .digits.empty{color:rgba(143,214,180,.28)}
+  .words{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:21px;line-height:1.4;
+    color:var(--bone);
+    min-height:60px;
+    border-top:1px solid rgba(143,214,180,.15);
+    padding-top:12px;
+  }
+  .words.placeholder{color:rgba(237,230,214,.32);font-size:16px;font-family:inherit}
+  .words.reveal{animation:pop .22s ease-out}
+  @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  button{font:inherit;cursor:pointer;border:0;color:inherit}
+  .key{
+    background:var(--bone);
+    color:var(--ink);
+    font-size:26px;font-weight:500;
+    height:62px;border-radius:8px;
+    border-bottom:4px solid var(--bone-dim);
+    transition:transform .05s, border-bottom-width .05s;
+  }
+  .key.fn{background:var(--ink-soft);color:var(--bone);font-size:17px;border-bottom-color:#0A1A21}
+  .key:active{transform:translateY(3px);border-bottom-width:1px}
+  .speak{
+    background:var(--amber);color:#2A1A00;
+    font-size:20px;font-weight:700;letter-spacing:.04em;
+    height:64px;border-radius:8px;
+    border-bottom:4px solid var(--amber-deep);
+    transition:transform .05s, border-bottom-width .05s;
+  }
+  .speak:active{transform:translateY(3px);border-bottom-width:1px}
+  .speak:disabled{opacity:.4;cursor:default;transform:none}
+  :focus-visible{outline:3px solid var(--glow);outline-offset:2px}
+  .settings{
+    display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;
+    font-size:13px;color:rgba(237,230,214,.62);
+    border-top:1px solid rgba(237,230,214,.12);
+    padding-top:14px;
+  }
+  .settings label{display:flex;align-items:center;gap:6px}
+  select,input[type=range]{font:inherit;color:var(--bone);background:var(--ink-soft);
+    border:1px solid rgba(237,230,214,.18);border-radius:5px;padding:4px 6px;max-width:150px}
+  input[type=range]{padding:0;width:92px;accent-color:var(--amber)}
+  .hint{font-size:12px;color:rgba(237,230,214,.4);line-height:1.6}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="machine">
+  <section class="screen">
+    <div class="digits empty" id="digits">0</div>
+    <div class="words placeholder" id="words">輸入數字後按「唸出來」</div>
+  </section>
+  <div class="pad" id="pad">
+    <button class="key" data-d="1">1</button>
+    <button class="key" data-d="2">2</button>
+    <button class="key" data-d="3">3</button>
+    <button class="key" data-d="4">4</button>
+    <button class="key" data-d="5">5</button>
+    <button class="key" data-d="6">6</button>
+    <button class="key" data-d="7">7</button>
+    <button class="key" data-d="8">8</button>
+    <button class="key" data-d="9">9</button>
+    <button class="key fn" id="clear">清除</button>
+    <button class="key" data-d="0">0</button>
+    <button class="key fn" id="back">退一格</button>
+  </div>
+  <button class="speak" id="speak">唸出來</button>
+  <div class="settings">
+    <label>發音
+      <select id="voice"><option>載入中</option></select>
+    </label>
+    <label>語速
+      <input type="range" id="rate" min="0.5" max="1.2" step="0.05" value="0.9">
+    </label>
+    <label><input type="checkbox" id="brit"> 英式加 and</label>
+  </div>
+  <p class="hint">沒有聲音？請確認手機沒有開靜音。<br>電腦可直接用鍵盤數字輸入，Enter 唸出、Backspace 退格、Esc 清除。</p>
+</main>
+<script>
+(function(){
+  var ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten',
+            'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  var TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  var SCALE=['','thousand','million','billion'];
+
+  function under100(n){
+    if(n<20) return ONES[n];
+    var t=TENS[Math.floor(n/10)], r=n%10;
+    return r? t+'-'+ONES[r] : t;
+  }
+  function under1000(n,useAnd){
+    var h=Math.floor(n/100), r=n%100, out=[];
+    if(h) out.push(ONES[h]+' hundred');
+    if(r){ if(h&&useAnd) out.push('and'); out.push(under100(r)); }
+    return out.join(' ');
+  }
+  function toWords(str,useAnd){
+    var s=String(str).replace(/^0+(?=\d)/,'');
+    if(s===''||s==='0') return 'zero';
+    var groups=[];
+    while(s.length>3){ groups.unshift(+s.slice(-3)); s=s.slice(0,-3); }
+    groups.unshift(+s);
+    var last=groups.length-1, parts=[];
+    groups.forEach(function(g,i){
+      if(!g) return;
+      var idx=last-i;
+      if(useAnd && idx===0 && groups.length>1 && g<100) parts.push('and');
+      parts.push(under1000(g,useAnd)+(idx?' '+SCALE[idx]:''));
+    });
+    return parts.join(' ').replace(/\s+/g,' ').trim();
+  }
+
+  var MAX=12, buf='';
+  var elD=document.getElementById('digits'), elW=document.getElementById('words');
+  var elSpeak=document.getElementById('speak'), elBrit=document.getElementById('brit');
+  var elVoice=document.getElementById('voice'), elRate=document.getElementById('rate');
+
+  function render(){
+    var clean=buf.replace(/^0+(?=\d)/,'');
+    elD.textContent = clean? Number(clean).toLocaleString('en-US') : '0';
+    elD.classList.toggle('empty', buf==='');
+    elSpeak.disabled = buf==='';
+    elW.textContent='輸入數字後按「唸出來」';
+    elW.className='words placeholder';
+  }
+  function push(d){ if(buf.replace(/^0+/,'').length>=MAX && buf!=='') return; buf=(buf==='0'?'':buf)+d; render(); }
+
+  var voices=[];
+  function loadVoices(){
+    voices=(window.speechSynthesis? speechSynthesis.getVoices():[]).filter(function(v){return /^en/i.test(v.lang);});
+    elVoice.innerHTML='';
+    if(!voices.length){ elVoice.innerHTML='<option>系統預設</option>'; return; }
+    voices.forEach(function(v,i){
+      var o=document.createElement('option');
+      o.value=i; o.textContent=v.name.replace(/\s*\(.*\)/,'')+' · '+v.lang;
+      elVoice.appendChild(o);
+    });
+    var us=voices.findIndex(function(v){return /en-US/i.test(v.lang);});
+    if(us>-1) elVoice.value=us;
+  }
+  if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
+
+  function speak(){
+    if(buf==='') return;
+    var text=toWords(buf, elBrit.checked);
+    elW.textContent=text;
+    elW.className='words reveal';
+    if(!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='en-US'; u.rate=parseFloat(elRate.value);
+    var v=voices[elVoice.value]; if(v){ u.voice=v; u.lang=v.lang; }
+    speechSynthesis.speak(u);
+  }
+
+  document.getElementById('pad').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.d!==undefined) push(b.dataset.d);
+    else if(b.id==='clear'){ buf=''; render(); }
+    else if(b.id==='back'){ buf=buf.slice(0,-1); render(); }
+  });
+  elSpeak.addEventListener('click',speak);
+  elW.addEventListener('click',function(){ if(!elW.classList.contains('placeholder')) speak(); });
+
+  document.addEventListener('keydown',function(e){
+    if(/^[0-9]$/.test(e.key)) push(e.key);
+    else if(e.key==='Backspace'){ e.preventDefault(); buf=buf.slice(0,-1); render(); }
+    else if(e.key==='Escape'){ buf=''; render(); }
+    else if(e.key==='Enter'){ e.preventDefault(); speak(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
