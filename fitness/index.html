@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>健身動作查詢</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <h1>健身動作查詢 <span class="draft">擬稿</span></h1>
+      <nav class="views" role="tablist">
+        <button data-view="exercises" class="on">依部位／器材</button>
+        <button data-view="muscles">依肌肉查</button>
+        <button data-view="patterns">動作模式對照</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- 視圖 1：動作列表 -->
+    <section id="view-exercises" class="view">
+      <div class="filters">
+        <input id="q" type="search" placeholder="搜尋動作或肌肉，例如：臥推、背闊肌、squat">
+        <div class="chips" id="part-chips"></div>
+        <div class="chips" id="eq-chips"></div>
+      </div>
+      <div id="list"></div>
+    </section>
+
+    <!-- 視圖 2：點肌肉找動作 -->
+    <section id="view-muscles" class="view" hidden>
+      <p class="hint">點選人體圖上的肌肉，列出以它為主動肌／協同肌的動作。</p>
+      <div class="muscle-layout">
+        <div class="maps" id="muscle-maps"></div>
+        <div id="muscle-result"></div>
+      </div>
+    </section>
+
+    <!-- 視圖 3：動作模式 → 肌肉 -->
+    <section id="view-patterns" class="view" hidden>
+      <p class="hint">「怎樣的動作 → 練到哪些肌肉」：同一種動作模式，換器材練到的主要肌群大致相同。</p>
+      <div id="pattern-table"></div>
+    </section>
+
+    <footer class="refs">
+      <h2>參考書目</h2>
+      <ol id="book-list"></ol>
+      <p class="note">肌肉發力說明整理自上列教科書的通用觀點，人體圖為示意，非精確解剖。若有傷病請諮詢專業人員。</p>
+    </footer>
+  </main>
+
+  <!-- 動作詳細 -->
+  <dialog id="detail"></dialog>
+
+  <script src="js/muscles.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
